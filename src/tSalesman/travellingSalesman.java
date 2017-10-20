@@ -1,3 +1,10 @@
+/*
+ * Rodger Byrd
+ * 10/19/18
+ * CS5720 HW2
+ * TravellingSalesman
+ */
+
 package tSalesman;
 
 import java.io.BufferedReader;
@@ -19,7 +26,9 @@ import java.util.*;
 import java.math.*;
 
 public class travellingSalesman {
-	public static int numCities = 12;
+
+	public static int numCities = 5;
+
 	public static float minDistance = 1000000000;
 	
 	public static void main(String[] args) throws UnsupportedEncodingException, FileNotFoundException, IOException {
@@ -31,6 +40,7 @@ public class travellingSalesman {
 		
 		Random rand = new Random();
 		
+	
 		//randomly create n cities
 		for (int i = 0; i < numCities; i++) {
 			city c = new city();
@@ -39,6 +49,7 @@ public class travellingSalesman {
 			c.name = "city" + i;
 			cities.add(c);
 		}
+
 		
 		//check cities list
 		printToConsole(cities);
@@ -48,16 +59,38 @@ public class travellingSalesman {
 		
 		//read from file
 		List<distanceData> distances = readDistances("output.txt");
+		List<city> citiesData = new ArrayList<city>();
+		Set<String> hs = new HashSet<>(); //temp hold for reading cities from file to remove duplicates
 		
-		//build file info into something to analyze
-		List fileCities = new ArrayList();
-		/*
-		for (int i = 0; i < fileCities.size(); i++) {
-		    if (fileCities.contains(fileCities.get(i).))
-			//int element = fileCities.get(i);
-		    
-		}*/
+		String dist = "";
+		for (int i = 0; i < distances.size(); i++) {
+
+			dist += distances.get(i).nameA + "\t" + 
+					distances.get(i).nameB + "\t" +
+					distances.get(i).distance + "\n";
+			
+			hs.add(distances.get(i).nameA);
+			hs.add(distances.get(i).nameB);
+			
+		}
 		
+		//read hashset into list object for recursion
+		for (String s : hs) {
+		    //System.out.println(s);
+			city c = new city();
+			c.name = s;
+			citiesData.add(c);
+		}
+		printAnalysisToFile("results.txt", dist);
+		
+
+		permute2(cities,distances,0);
+
+		
+		//check cities list
+		printToConsole(cities);
+		
+		printToFile("output.txt", cities);
 		
 		permute(cities,0);
 		
@@ -65,12 +98,105 @@ public class travellingSalesman {
 		long endTime   = System.currentTimeMillis();
 		long totalTime = endTime - startTime;
 		System.out.println("Total runtime = " + totalTime +"ms");
-		
+		System.out.println("Solution distance = " + minDistance +"\n");
 		String outString = "Number of cities = " + numCities+ "\n";
 		outString += "Total runtime = " + totalTime +"ms\n";
 		outString += "Solution distance = " + minDistance +"\n";
 		printAnalysisToFile("results.txt",outString);
 		
+	}
+	static void permute2(java.util.List<city> arr,List<distanceData> dist, int k) throws UnsupportedEncodingException, FileNotFoundException, IOException{
+    	
+        for(int i = k; i < arr.size(); i++){
+            java.util.Collections.swap(arr, i, k);
+            permute2(arr, dist, k+1);
+            java.util.Collections.swap(arr, k, i);
+        }
+        if (k == arr.size() -1){
+        	float distance = 0;
+        	String output = "";
+        	for (int i = 0; i < arr.size(); i++){
+        		output += arr.get(i).name + "\t";
+        		
+        		if (i==(arr.size()-1)){
+        			
+        			distance += distanceLookup(dist, arr.get(1).name ,arr.get(0).name); 
+        			output += arr.get(0).name + "\t";
+        		}else{
+        			
+        			distance += distanceLookup(dist, arr.get(i).name ,arr.get(i+1).name); 
+        		}
+        			
+        	}
+        	if (distance == 0) System.out.println("distance function errr");
+        	
+        	if (distance < minDistance){
+        		minDistance = distance;
+        		output += "\tdistance: " + distance + "\n";
+                
+                printAnalysisToFile("results.txt", output);
+        	} else{
+        		//larger, don't bother printing to file
+        		//file size too large for high number of cities
+        	}
+
+        	
+        	
+    		
+
+        }
+    }
+	static void permuteVectors(java.util.List<distanceData> arr, int k) throws UnsupportedEncodingException, FileNotFoundException, IOException{
+    	
+        for(int i = k; i < arr.size(); i++){
+            java.util.Collections.swap(arr, i, k);
+            permuteVectors(arr, k+1);
+            java.util.Collections.swap(arr, k, i);
+        }
+        if (k == arr.size() -1){
+        	float distance = 0;
+        	String output = "";
+        	for (int i = 0; i < arr.size(); i++){
+        		distance += arr.get(i).distance;
+            	output += arr.get(i).nameA + " to ";
+            	output +=  arr.get(i).nameB + " - ";
+        	}
+        	output += "\n";
+        	if (distance < minDistance) {
+        		
+        		minDistance = distance;
+            	output += "\tdistance: " + distance + "\n";
+                printAnalysisToFile("results.txt", output);
+                
+        	} else{
+        		//larger, don't bother printing to file
+        		//file size too large for high number of cities
+        	}
+
+    		
+
+        }
+    }
+	static float distanceLookup(java.util.List<distanceData> arr, String cityA, String cityB){
+		float distance = 0;
+		for (int i = 0; i < arr.size(); i++){
+			if ( (arr.get(i).nameA.equals(cityA) && arr.get(i).nameB.equals(cityB))){
+				distance = arr.get(i).distance; 
+
+
+			} else if((arr.get(i).nameA.equals(cityB) && arr.get(i).nameB.equals(cityB) )){
+				distance = arr.get(i).distance; 
+
+				break;
+			}
+			else{
+				
+				//System.out.println("error in distance lookup " + cityA + " " + cityB);
+			}
+		}
+		
+
+		return distance;
 	}
 	static void permute(java.util.List<city> arr, int k) throws UnsupportedEncodingException, FileNotFoundException, IOException{
     	
@@ -99,9 +225,6 @@ public class travellingSalesman {
         	if (distance < minDistance) minDistance = distance;
         	
         	output += "\tdistance: " + distance + "\n";
-            
-            //printAnalysisToFile("results.txt", output);
-    		
 
         }
     }
@@ -139,6 +262,7 @@ public class travellingSalesman {
 	   }
        return inputs;
 	}
+
 	static float calculateDistance(city a, city b) {
 		float d = 0;
 		d = (float) Math.sqrt((a.xCoord - b.xCoord)*(a.xCoord - b.xCoord) + (a.yCoord - b.yCoord)*(a.yCoord - b.yCoord));
